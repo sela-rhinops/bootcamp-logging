@@ -1,4 +1,4 @@
-# Lab 01: Deploy Elasticsearch using Docker Compose
+# Lab 01: Deploy Elasticsearch using the ECK Operator
 
 ## Tasks
 

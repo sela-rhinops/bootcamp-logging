@@ -1,9 +1,9 @@
-# Lab 02: Deploy Kibana using Docker Compose
+# Lab 02: Deploy Kibana using the ECK Operator
 
 ## Tasks
 
  - Create Kibana configuration file
- - Deploy Kibana using Docker Compose
+ - Deploy Kibana using CRDs
  - Explore Kibana
 
 ## Create Kibana configuration file

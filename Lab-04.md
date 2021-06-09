@@ -1,9 +1,9 @@
-# Lab 03: Deploy Filebeat using Docker Compose
+# Lab 03: Deploy Filebeat using the ECK Operator
 
 ## Tasks
 
  - Create Filebeat configuration file
- - Deploy Filebeat using Docker Compose
+ - Deploy Filebeat using the ECK Operator
  - Deploy demo application
  - Visualize logs
 
@@ -13,112 +13,146 @@
 mkdir ~/logging-lab/filebeat
 ```
 
-2. Now let's create a basic configuration file for Filebeat (I will use vim, you can use a different editor)
+2. Now let's create a Kubernetes configuration file for Filebeat (I will use vim, you can use a different editor)
 ```
 vim ~/logging-lab/filebeat/filebeat.yml
 ```
 
 3. The content of the file should be the below:
 ```
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: quickstart
+spec:
+  type: filebeat
+  version: 7.12.0
+  elasticsearchRef:
+    name: quickstart
+  kibanaRef:
+    name: quickstart
+  config:
+    filebeat:
+      autodiscover:
+        providers:
+        - type: kubernetes
+          node: ${NODE_NAME}
+          hints:
+            enabled: true
+            default_config:
+              type: container
+              paths:
+              - /var/log/containers/*${data.kubernetes.container.id}.log
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat
+        automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        containers:
+        - name: filebeat
+          securityContext:
+            runAsUser: 0
+            # If using Red Hat OpenShift uncomment this:
+            #privileged: true
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+        volumes:
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
 ---
-filebeat.config:
-  modules:
-    path: ${path.config}/modules.d/*.yml
-    reload.enabled: false
-
-filebeat.autodiscover:
-  providers:
-    - type: docker
-      hints.enabled: true
-
-output.elasticsearch:
-  hosts: http://elasticsearch:9200
-
-logging.level: info
-logging.to_stderr: true
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
 ```
 
-## Deploy Filebeat using Docker Compose
+## Deploy Filebeat using CRDs
 
-1. Let's add to the docker-compose file that we created in the previous lab a new service for filebeat
-```
-vim ~/logging-lab/docker-compose.yml
-```
+1. Use kubectl to deploy filebeat with the configuration file created in the previous step.
+  ```
+  kubectl apply -f ~/logging-lab/filebeat/filebeat.yml
+  ```
 
-2. The content of the docker-compose file should be the following:
-```
-version: '3.2'
-services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
-    volumes:
-      - type: bind
-        source: ./elasticsearch/elasticsearch.yml
-        target: /usr/share/elasticsearch/config/elasticsearch.yml
-        read_only: true
-      - type: volume
-        source: elasticsearch
-        target: /usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-      ELASTIC_PASSWORD: changeme
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
-      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
-      discovery.type: single-node
-    networks:
-      - elk
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.12.1
-    volumes:
-      - type: bind
-        source: ./kibana/kibana.yml
-        target: /usr/share/kibana/config/kibana.yml
-        read_only: true
-    ports:
-      - "5601:5601"
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch   
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.12.1
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker:/var/lib/docker
-      - filebeat:/usr/share/filebeat/data:rw
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
-    command: ["--strict.perms=false"]
-    networks:
-    - elk
-    depends_on:
-      - logstash
-      - elasticsearch
-networks:
-  elk:
-volumes:
-  elasticsearch:
-  filebeat:
-```
+2. It may take up to a few minutes until all the resources are created and filebeat connects to Elasticsearch and Kibana. You can see the status of the pods with:
+  ```
+  kubectl get po -w
+  ```
 
-3. Deploy Filebeat using docker compose
-```
-cd ~/logging-lab
-docker-compose up -d
-```
+3. You can also get an overview of all beats running in the Kubernetes cluster and get information such as health, name of deployment, desired and current number of replicas, type of beat and version by:
+  ```
+  kubectl get beats
+  ```
+
+4. Access the logs of filebeat Pods:
+  ```
+  kubectl logs -f quickstart-beat-filebeat-<uuid>
+  ```
+
+5. List all the Pods belonging to a given Beat.
+  ```
+  kubectl get pods --selector='beat.k8s.elastic.co/name=quickstart-beat-filebeat'
+  ```
 
 ## Deploy demo application
 
 1. Let's deploy the the demo "Guestbook" application
 ```
-cd ../demo-app
-docker-compose up -d
+kubectl apply -f ./demo-app
 ```
 
-2. Go to localhost (port 80) and add some entries in the Guestbook
+2. Go to localhost:<nodeport> and add some entries in the Guestbook
 
 ## Visualize logs
 

@@ -54,7 +54,7 @@ spec:
 
 4. Access the logs of the Kibana Pod:
   ```
-  kubectl logs -f quickstart-es-default-0
+  kubectl logs -f quickstart-kb-<uuid>-<uuid>
   ```
 
 5. Lets change the service that was created for Kibana from ClusterIp to NodePort to have access to it.
@@ -135,19 +135,17 @@ POST _bulk
 
   ![dev-tools](/images/dev-tools-2.png)
 
-10. Now that we have some data lets create our first dashboard. Go to Analytics > Dashboard and click the "Create Dashboard" Button
+10. Now that we have some data lets create our first dashboard. Go to Analytics > Dashboard and click the "Create New Dashboard" Button
 
   ![dashboard-1](/images/dashboard-1.png)
 
-11. Click on the create panel button
+11. Click on the create visualization button
 
   ![dashboard-2](/images/dashboard-2.png)
 
-12. Chose the Lens option
-
-  ![dashboard-3](/images/dashboard-3.png)
-
-13. Chose the "Bar" chart type
+13. Chose the "Bar Vertical" chart type
+  
+    ![dashboard-3](/images/dashboard-3.png)
 
 14. From the menu on the left drag the field "username.keyword" and drop it to the Horizontal axis
 

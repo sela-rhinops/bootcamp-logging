@@ -1,4 +1,9 @@
----
-server.name: kibana
-server.host: 0.0.0.0
-elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: quickstart
+spec:
+  version: 7.13.1
+  count: 1
+  elasticsearchRef:
+    name: quickstart

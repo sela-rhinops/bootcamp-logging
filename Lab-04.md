@@ -102,7 +102,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: filebeat
-  namespace: default
+  namespace: logging
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -111,7 +111,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: filebeat
-  namespace: default
+  namespace: logging
 roleRef:
   kind: ClusterRole
   name: filebeat
@@ -122,7 +122,7 @@ roleRef:
 
 1. Use kubectl to deploy filebeat with the configuration file created in the previous step.
   ```
-  kubectl apply -f ~/logging-lab/filebeat/filebeat.yml
+  kubectl apply -f ~/logging-lab/filebeat/filebeat.yml -n logging
   ```
 
 2. It may take up to a few minutes until all the resources are created and filebeat connects to Elasticsearch and Kibana. You can see the status of the pods with:
@@ -132,7 +132,7 @@ roleRef:
 
 3. You can also get an overview of all beats running in the Kubernetes cluster and get information such as health, name of deployment, desired and current number of replicas, type of beat and version by:
   ```
-  kubectl get beats
+  kubectl get beats -n logging
   ```
 
 4. Access the logs of filebeat Pods:

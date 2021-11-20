@@ -39,34 +39,34 @@ spec:
 
 1. Now lets use kubectl to deploy kibana using the yaml file that we created in the previous step.
   ```
-  kubectl apply -f ~/logging-lab/Kibana/kibana.yml
+  kubectl apply -f ~/logging-lab/Kibana/kibana.yml -n logging
   ```
 
 2. It may take up to a few minutes until all the resources are created and the cluster is ready for use. You can see the status of the pods with:
   ```
-  kubectl get po -w
+  kubectl get po -w -n logging
   ```
 
 3. You can also get an overview of all Kibana instaces running in the Kubernetes cluster, including health, version and number of nodes by:
   ```
-  kubectl get kibana
+  kubectl get kibana -n logging
   ```
 
 4. Access the logs of the Kibana Pod:
   ```
-  kubectl logs -f quickstart-kb-<uuid>-<uuid>
+  kubectl logs -f quickstart-kb-<uuid>-<uuid> -n logging
   ```
 
 5. Lets change the service that was created for Kibana from ClusterIp to NodePort to have access to it.
   ```
-  kubectl patch svc quickstart-kb-http --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+  kubectl patch svc quickstart-kb-http --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]' -n logging
   ```
 
 ## Explore Kibana
 
 1. First lets retrieve the credentials of the elastic user so that we can use them to login into kibana
   ```
-  PASSWORD=$(kubectl get secret quickstart-es-elastic-user -o go-template='{{.data.elastic | base64decode}}') &&  echo $PASSWORD
+  PASSWORD=$(kubectl get secret quickstart-es-elastic-user -n logging -o go-template='{{.data.elastic | base64decode}}') &&  echo $PASSWORD
   ```
   Copy the password from the terminal by selecting it and using ctrl+insert
 

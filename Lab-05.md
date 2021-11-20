@@ -65,7 +65,7 @@ logstashPipeline:
   	  elasticsearch {
   	  	hosts => "https://quickstart-es-http:9200"
         user => elastic
-        password => a3n8994f0JNt7Fxfk8G3xy8X
+        password => <YOUR-ELASTIC-PASSWORD>
         index => "logstash-guestbook-%{+YYYY.MM.dd}"
         cacert => '/usr/share/logstash/ssl/ca.crt'
       }
@@ -74,7 +74,7 @@ logstashPipeline:
       elasticsearch {
   	    hosts => "https://quickstart-es-http:9200"
         user => elastic
-        password => a3n8994f0JNt7Fxfk8G3xy8X
+        password => <YOUR-ELASTIC-PASSWORD>
         index => "logstash-other-%{+YYYY.MM.dd}"
         cacert => '/usr/share/logstash/ssl/ca.crt'
       }
@@ -129,7 +129,7 @@ hostAliases: []
 #  - "bar.local"
 
 image: "docker.elastic.co/logstash/logstash"
-imageTag: "8.0.0-SNAPSHOT"
+imageTag: "7.14.0"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
@@ -430,17 +430,18 @@ roleRef:
 
 1. Add the logstash helm repository to your helm repos
 ```
-helm repo add
+helm repo add elastic https://helm.elastic.co
 ```
 
 2. Install Logstash using Helm
 ```
-helm install
+helm install logstash elastic/logstash -n logging -f ~/logging-lab/logstash/values.yaml
 ```
 
 3. Update Filebeat configuration to point to Logstash instead of directly Elasticsearch.
 ```
-kubectl apply ~/
+kubectl apply ~/logging-lab/filebeat/ -n logging
+```
 
 
 ## Visualize logs

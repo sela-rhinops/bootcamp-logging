@@ -29,7 +29,7 @@ kind: Kibana
 metadata:
   name: quickstart
 spec:
-  version: 7.13.1
+  version: 7.14.0
   count: 1
   elasticsearchRef:
     name: quickstart
@@ -72,7 +72,7 @@ spec:
 
 1. Browse to your kibana instance from any browser
   ```
-  https://localhost:<nodeport>
+  https://<NODE-IP>:<NODEPORT>
   ```
 
 2. Log In with the following credentials

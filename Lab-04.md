@@ -26,7 +26,7 @@ metadata:
   name: quickstart
 spec:
   type: filebeat
-  version: 7.12.0
+  version: 7.14.0
   elasticsearchRef:
     name: quickstart
   kibanaRef:

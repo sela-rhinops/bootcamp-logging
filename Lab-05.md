@@ -335,7 +335,7 @@ metadata:
   name: quickstart
 spec:
   type: filebeat
-  version: 7.12.0
+  version: 7.14.0
   kibanaRef:
     name: quickstart
   config:
@@ -426,78 +426,22 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
-## Deploy Logstash using the ECK Operator
+## Deploy Logstash using Helm and update filebeat configuration
 
-1. Let's add to the docker-compose file that we created in the previous lab a new service for logstash
+1. Add the logstash helm repository to your helm repos
+```
+helm repo add
+```
 
+2. Install Logstash using Helm
 ```
-vim ~/logging-lab/docker-compose.yml
+helm install
 ```
 
-2. The content of the docker-compose file should be the following:
+3. Update Filebeat configuration to point to Logstash instead of directly Elasticsearch.
+```
+kubectl apply ~/
 
-```
-version: '3.2'
-services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
-    volumes:
-      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-      - elasticsearch:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-      ELASTIC_PASSWORD: changeme
-      discovery.type: single-node
-    networks:
-      - elk
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.12.1
-    volumes:
-      - type: bind
-        source: ./kibana/kibana.yml
-        target: /usr/share/kibana/config/kibana.yml
-        read_only: true
-    ports:
-      - "5601:5601"
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch   
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.12.1
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker:/var/lib/docker
-      - filebeat:/usr/share/filebeat/data:rw
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
-    command: ["--strict.perms=false"]
-    networks:
-    - elk
-    depends_on:
-      - logstash
-      - elasticsearch
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.12.1
-    volumes:
-      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-    ports:
-      - "5044:5044"
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch
-networks:
-  elk:
-volumes:
-  elasticsearch:
-  filebeat:
-```
 
 ## Visualize logs
 

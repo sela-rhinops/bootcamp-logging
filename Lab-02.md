@@ -37,7 +37,7 @@ kind: Elasticsearch
 metadata:
   name: quickstart
 spec:
-  version: 7.13.1
+  version: 7.14.0
   nodeSets:
   - name: default
     count: 1
@@ -83,33 +83,33 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
 
 2. Elasticsearch itself does not have a UI but we are going to do a couple of requests to it's API. The first request will be to the / endpoint to see if it was installed succesfully.
   ```
-  curl -k -u elastic:$PASSWORD https://localhost:31053
+  curl -k -u elastic:$PASSWORD https://<NODE-IP>:<NODEPORT>
   ```
 
 3. We can check the health of the cluster by sending a GET request to the health endpoint. We will see that the health of the cluster is yellow and this is because we are using a single node cluster.
   ```
-    curl -k -u elastic:$PASSWORD https://localhost:31053/_cat/health
+    curl -k -u elastic:$PASSWORD https://<NODE-IP>:<NODEPORT>/_cat/health
   ```
 
 4. We are going to create two indices where we will uploading our documents.
   ```
-  curl -k -u elastic:$PASSWORD -XPUT "https://localhost:31053/app-logs-auth"
+  curl -k -u elastic:$PASSWORD -XPUT "https://20.56.7.107:30651/app-logs-auth"
 
-  curl -k -u elastic:$PASSWORD -XPUT "https://localhost:31053/app-logs-actions"
+  curl -k -u elastic:$PASSWORD -XPUT "https://20.56.7.107:30651/app-logs-actions"
   ```
 5. Now we are going to upload a document into each of the indices that we created.
   ```
-  curl -k -u elastic:$PASSWORD -XPOST 'https://localhost:31053/app-logs-auth/my_app' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XPOST 'https://20.56.7.107:30651/app-logs-auth/my_app' -H 'Content-Type: application/json' -d'
   {
   	"timestamp": "2020-01-24 12:34:56",
   	"message": "User logged in",
     "username": "mickeymouse",
   	"user_id": 4,
-  	"admin": false
+  	"admin": "false"
   }
   '
   
-  curl -k -u elastic:$PASSWORD -XPOST 'https://localhost:31053/app-logs-actions/my_app' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XPOST 'https://20.56.7.107:30651/app-logs-actions/my_app' -H 'Content-Type: application/json' -d'
   {
   	"timestamp": "2020-01-24 12:34:57",
   	"message": "User performed action",
@@ -123,12 +123,12 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
   ```
 6. Indexed documents are available for search in near real-time. To search data, we are going to use the _search API. The following request will get all the documents in all the indexes that match the app-logs-* pattern.
   ```
-  curl -k -u elastic:$PASSWORD -XGET 'https://localhost:31053/app-logs-*/_search?pretty'
+  curl -k -u elastic:$PASSWORD -XGET 'https://20.56.7.107:30651/app-logs-*/_search?pretty'
   ```
 
 7. The following request uses the same _search api but this time we are sending a query that matches documents that contain the string "User logged in" in the field "message"
   ```
-  curl -k -u elastic:$PASSWORD -XGET 'https://localhost:31053/app-logs-*/_search?pretty' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XGET 'https://20.56.7.107:30651/app-logs-*/_search?pretty' -H 'Content-Type: application/json' -d'
   {
     "query": {
       "match_phrase": {

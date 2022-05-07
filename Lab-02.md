@@ -48,28 +48,33 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
 
 ## Deploy Elasticsearch using CRDs
 
-1. Use kubectl to deploy the cluster with the configuration file created in the previous step.
+1. Create the "logging" namespace where the Elasticsearch cluster and all it's related resources will be deployed
+```
+kubectl create ns logging
+```
+
+2. Use kubectl to deploy the cluster with the configuration file created in the previous step.
   ```
   kubectl apply -f ~/logging-lab/elasticsearch/elasticsearch.yml -n logging
   ```
 
-2. It may take up to a few minutes until all the resources are created and the cluster is ready for use. You can see the status of the pods with:
+3. It may take up to a few minutes until all the resources are created and the cluster is ready for use. You can see the status of the pods with:
   ```
   kubectl get po -w -n logging
   ```
 
-3. You can also get an overview of the current Elasticsearch clusters in the Kubernetes cluster, including health, version and number of nodes by:
+4. You can also get an overview of the current Elasticsearch clusters in the Kubernetes cluster, including health, version and number of nodes by:
   ```
   kubectl get elasticsearch -n logging
   ```
   When you create the cluster, there is no HEALTH status and the PHASE is empty. After a while, the PHASE turns into Ready, and HEALTH becomes green. The HEALTH status comes from Elasticsearch’s cluster health API.
 
-4. Access the logs of the Elasticsearch Pod:
+5. Access the logs of the Elasticsearch Pod:
   ```
   kubectl logs -f quickstart-es-default-0 -n logging
   ```
 
-5. Lets change the service that was created for the cluster from ClusterIp to NodePort to have access to it.
+6. Lets change the service that was created for the cluster from ClusterIp to NodePort to have access to it.
   ```
   kubectl patch svc quickstart-es-http -n logging --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
   ```
@@ -81,25 +86,31 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
   PASSWORD=$(kubectl get secret -n logging quickstart-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
   ```
 
+3. Let's configure some additional variables that we will need for the rest of this lab. The values will depend on how do you reach your elasticsearch cluster. If you followed exactly the steps above we will need the IP of one of the nodes in the cluster and the NodePort assigned to it by kubernetes:
+```
+ELASTICSEARCH_HOST=<NODE-IP>
+ELASTICSEARCH_PORT=<NODEPORT>
+```
+
 2. Elasticsearch itself does not have a UI but we are going to do a couple of requests to it's API. The first request will be to the / endpoint to see if it was installed succesfully.
   ```
-  curl -k -u elastic:$PASSWORD https://<NODE-IP>:<NODEPORT>
+  curl -k -u elastic:$PASSWORD https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
   ```
 
 3. We can check the health of the cluster by sending a GET request to the health endpoint. We will see that the health of the cluster is yellow and this is because we are using a single node cluster.
   ```
-    curl -k -u elastic:$PASSWORD https://<NODE-IP>:<NODEPORT>/_cat/health
+    curl -k -u elastic:$PASSWORD https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/_cat/health
   ```
 
 4. We are going to create two indices where we will uploading our documents.
   ```
-  curl -k -u elastic:$PASSWORD -XPUT "https://<NODE-IP>:<NODEPORT>/app-logs-auth"
+  curl -k -u elastic:$PASSWORD -XPUT "https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-auth"
 
-  curl -k -u elastic:$PASSWORD -XPUT "https://<NODE-IP>:<NODEPORT>/app-logs-actions"
+  curl -k -u elastic:$PASSWORD -XPUT "https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-actions"
   ```
 5. Now we are going to upload a document into each of the indices that we created.
   ```
-  curl -k -u elastic:$PASSWORD -XPOST 'https://<NODE-IP>:<NODEPORT>/app-logs-auth/my_app' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XPOST https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-auth/my_app -H 'Content-Type: application/json' --d @- << EOF
   {
   	"timestamp": "2020-01-24 12:34:56",
   	"message": "User logged in",
@@ -107,9 +118,9 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
   	"user_id": 4,
   	"admin": "false"
   }
-  '
+  EOF
   
-  curl -k -u elastic:$PASSWORD -XPOST 'https://<NODE-IP>:<NODEPORT>/app-logs-actions/my_app' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XPOST https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-actions/my_app -H 'Content-Type: application/json' -d @- << EOF
   {
   	"timestamp": "2020-01-24 12:34:57",
   	"message": "User performed action",
@@ -119,16 +130,16 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
   	"user_id": 999,
   	"admin": false
   }
-  '
+  EOF
   ```
 6. Indexed documents are available for search in near real-time. To search data, we are going to use the _search API. The following request will get all the documents in all the indexes that match the app-logs-* pattern.
   ```
-  curl -k -u elastic:$PASSWORD -XGET 'https://<NODE-IP>:<NODEPORT>/app-logs-*/_search?pretty'
+  curl -k -u elastic:$PASSWORD -XGET https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-*/_search?pretty
   ```
 
 7. The following request uses the same _search api but this time we are sending a query that matches documents that contain the string "User logged in" in the field "message"
   ```
-  curl -k -u elastic:$PASSWORD -XGET 'https://<NODE-IP>:<NODEPORT>/app-logs-*/_search?pretty' -H 'Content-Type: application/json' -d'
+  curl -k -u elastic:$PASSWORD -XGET https://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT/app-logs-*/_search?pretty -H 'Content-Type: application/json' -d @- << EOF
   {
     "query": {
       "match_phrase": {
@@ -136,7 +147,7 @@ As you may have noticed the "kind" of this object is Elasticsearch. This is one 
       }
     }
   }
-  '
+  EOF
   ```
 
 

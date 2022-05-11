@@ -206,7 +206,7 @@ helm install logstash elastic/logstash -n logging -f ~/logging-lab/logstash/valu
 
 3. Update Filebeat configuration to point to Logstash instead of directly Elasticsearch.
 ```
-kubectl apply ~/logging-lab/filebeat/ -n logging
+kubectl apply -f ~/logging-lab/filebeat/ -n logging
 ```
 
 

@@ -1,4 +1,4 @@
-# Lab 01: Deploy Elasticsearch using the ECK Operator
+# Lab 02: Deploy Elasticsearch using the ECK Operator
 
 ## Tasks
 

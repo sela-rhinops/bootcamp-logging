@@ -1,4 +1,4 @@
-# Lab 03: Deploy Filebeat using the ECK Operator
+# Lab 04: Deploy Filebeat using the ECK Operator
 
 ## Tasks
 

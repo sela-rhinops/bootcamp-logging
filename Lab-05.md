@@ -1,4 +1,4 @@
-# Lab 04: Deploy Logstash using the ECK Operator
+# Lab 05: Deploy Logstash using the ECK Operator
 
 ## Tasks
 
